@@ -133,7 +133,7 @@ namespace BlackjackSimulator
     {
         public static ConsoleColor ChipColor  = ConsoleColor.Yellow;
         public static ConsoleColor WinColor   = ConsoleColor.Green;
-        public static ConsoleColor LoseColor  = ConsoleColor.Red;
+        public static ConsoleColor LoseColor  = ConsoleColor.DarkRed;
         public static ConsoleColor CardColor  = ConsoleColor.Cyan;
         public static ConsoleColor TitleColor = ConsoleColor.Magenta;
 
@@ -317,7 +317,7 @@ namespace BlackjackSimulator
             UI.PrintLine($"  ║  Win rate     : {pct:F1}%{new string(' ', 9)}║", ConsoleColor.Cyan);
             string net = (_totalWinnings >= 0 ? "+" : "") + $"${_totalWinnings:N0}";
             UI.PrintLine($"  ║  Net winnings : {net,-13}║", _totalWinnings >= 0 ? UI.WinColor : UI.LoseColor);
-            UI.PrintLine($"  ║  Chips left   : ${_chips,-12:N0}║", UI.ChipColor);
+            UI.PrintLine($"  ║  Chips left   : ${_chips,-12:N0}║", _chips > 0 ? UI.WinColor : UI.LoseColor);
             UI.PrintLine("  ╚══════════════════════════════╝", ConsoleColor.Cyan);
             UI.PrintLine();
             UI.Pause();
