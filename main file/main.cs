@@ -154,7 +154,7 @@ namespace BlackjackSimulator
             Console.Clear();
             PrintLine("╔══════════════════════════════════════════════════╗", TitleColor);
             PrintLine("║          ♠  BLACKJACK SIMULATOR  ♠               ║", TitleColor);
-            PrintLine("║          ♥  6-Deck Shoe · Vegas Rules ♥           ║", TitleColor);
+            PrintLine("║          ♥  6-Deck Shoe · Vegas Rules ♥          ║", TitleColor);
             PrintLine("╚══════════════════════════════════════════════════╝", TitleColor);
             PrintLine();
         }
