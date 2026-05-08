@@ -1,0 +1,15 @@
+/workspaces/blackjack/main file/bin/Debug/net9.0/Blackjack
+/workspaces/blackjack/main file/bin/Debug/net9.0/Blackjack.deps.json
+/workspaces/blackjack/main file/bin/Debug/net9.0/Blackjack.runtimeconfig.json
+/workspaces/blackjack/main file/bin/Debug/net9.0/Blackjack.dll
+/workspaces/blackjack/main file/bin/Debug/net9.0/Blackjack.pdb
+/workspaces/blackjack/main file/obj/Debug/net9.0/main.GeneratedMSBuildEditorConfig.editorconfig
+/workspaces/blackjack/main file/obj/Debug/net9.0/main.AssemblyInfoInputs.cache
+/workspaces/blackjack/main file/obj/Debug/net9.0/main.AssemblyInfo.cs
+/workspaces/blackjack/main file/obj/Debug/net9.0/main.csproj.CoreCompileInputs.cache
+/workspaces/blackjack/main file/obj/Debug/net9.0/main.sourcelink.json
+/workspaces/blackjack/main file/obj/Debug/net9.0/Blackjack.dll
+/workspaces/blackjack/main file/obj/Debug/net9.0/refint/Blackjack.dll
+/workspaces/blackjack/main file/obj/Debug/net9.0/Blackjack.pdb
+/workspaces/blackjack/main file/obj/Debug/net9.0/main.genruntimeconfig.cache
+/workspaces/blackjack/main file/obj/Debug/net9.0/ref/Blackjack.dll

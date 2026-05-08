@@ -1,0 +1,5 @@
+/workspaces/blackjack/main file/obj/Debug/net8.0/main.GeneratedMSBuildEditorConfig.editorconfig
+/workspaces/blackjack/main file/obj/Debug/net8.0/main.AssemblyInfoInputs.cache
+/workspaces/blackjack/main file/obj/Debug/net8.0/main.AssemblyInfo.cs
+/workspaces/blackjack/main file/obj/Debug/net8.0/main.csproj.CoreCompileInputs.cache
+/workspaces/blackjack/main file/obj/Debug/net8.0/main.sourcelink.json
