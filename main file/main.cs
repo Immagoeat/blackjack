@@ -266,12 +266,12 @@ namespace BlackjackSimulator
         {
             UI.PrintLine();
             UI.PrintLine("  ╔═══════════════════════╗", UI.ChipColor);
-            UI.PrintLine("  ║     CHIP PURCHASE      ║", UI.ChipColor);
+            UI.PrintLine("  ║     CHIP PURCHASE     ║", UI.ChipColor);
             UI.PrintLine("  ╠═══════════════════════╣", UI.ChipColor);
-            UI.PrintLine("  ║  [1]  $500             ║", UI.ChipColor);
-            UI.PrintLine("  ║  [2]  $1,000           ║", UI.ChipColor);
-            UI.PrintLine("  ║  [3]  $5,000           ║", UI.ChipColor);
-            UI.PrintLine("  ║  [4]  Custom amount    ║", UI.ChipColor);
+            UI.PrintLine("  ║  [1]  $500            ║", UI.ChipColor);
+            UI.PrintLine("  ║  [2]  $1,000          ║", UI.ChipColor);
+            UI.PrintLine("  ║  [3]  $5,000          ║", UI.ChipColor);
+            UI.PrintLine("  ║  [4]  Custom amount   ║", UI.ChipColor);
             UI.PrintLine("  ╚═══════════════════════╝", UI.ChipColor);
             UI.PrintLine();
 
