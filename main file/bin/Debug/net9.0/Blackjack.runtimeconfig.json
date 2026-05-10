@@ -6,7 +6,9 @@
       "version": "9.0.0"
     },
     "configProperties": {
-      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
+      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
+      "SILK_NET_SDL_SDL_ENABLE_PINVOKE_OVERRIDE_1": false,
+      "SILK_NET_SDL_SDL_ENABLE_PINVOKE_OVERRIDE_0": false
     }
   }
 }

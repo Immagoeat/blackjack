@@ -7,13 +7,25 @@
     <AssemblyName>Blackjack</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="main.cs" />
+    <Compile Include="GameLogic.cs" />
+    <Compile Include="SaveData.cs" />
+    <Compile Include="Audio.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Silk.NET.Input"      Version="2.23.0" />
+    <PackageReference Include="Silk.NET.OpenAL"     Version="2.23.0" />
+    <PackageReference Include="Silk.NET.OpenGL"     Version="2.22.0" />
+    <PackageReference Include="Silk.NET.Windowing"  Version="2.23.0" />
+    <PackageReference Include="Silk.NET.Windowing.Sdl" Version="2.23.0" />
+    <PackageReference Include="StbTrueTypeSharp"    Version="1.26.12" />
   </ItemGroup>
 
 </Project>

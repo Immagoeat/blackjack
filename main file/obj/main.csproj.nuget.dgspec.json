@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/workspaces/blackjack/main file/main.csproj": {}
+    "/home/evan/Desktop/Blackjack/main file/main.csproj": {}
   },
   "projects": {
-    "/workspaces/blackjack/main file/main.csproj": {
+    "/home/evan/Desktop/Blackjack/main file/main.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/workspaces/blackjack/main file/main.csproj",
+        "projectUniqueName": "/home/evan/Desktop/Blackjack/main file/main.csproj",
         "projectName": "Blackjack",
-        "projectPath": "/workspaces/blackjack/main file/main.csproj",
-        "packagesPath": "/home/codespace/.nuget/packages/",
-        "outputPath": "/workspaces/blackjack/main file/obj/",
+        "projectPath": "/home/evan/Desktop/Blackjack/main file/main.csproj",
+        "packagesPath": "/home/evan/.nuget/packages/",
+        "outputPath": "/home/evan/Desktop/Blackjack/main file/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/codespace/.nuget/NuGet/NuGet.Config"
+          "/home/evan/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -38,11 +38,37 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
+          "dependencies": {
+            "Silk.NET.Input": {
+              "target": "Package",
+              "version": "[2.23.0, )"
+            },
+            "Silk.NET.OpenAL": {
+              "target": "Package",
+              "version": "[2.23.0, )"
+            },
+            "Silk.NET.OpenGL": {
+              "target": "Package",
+              "version": "[2.22.0, )"
+            },
+            "Silk.NET.Windowing": {
+              "target": "Package",
+              "version": "[2.23.0, )"
+            },
+            "Silk.NET.Windowing.Sdl": {
+              "target": "Package",
+              "version": "[2.23.0, )"
+            },
+            "StbTrueTypeSharp": {
+              "target": "Package",
+              "version": "[1.26.12, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -54,26 +80,12 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Host.linux-x64",
-              "version": "[9.0.14, 9.0.14]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.200/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.313/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
