@@ -15,8 +15,11 @@
   <ItemGroup>
     <Compile Include="main.cs" />
     <Compile Include="GameLogic.cs" />
+    <Compile Include="PokerLogic.cs" />
+    <Compile Include="SlotsLogic.cs" />
     <Compile Include="SaveData.cs" />
     <Compile Include="Audio.cs" />
+    <Compile Include="LanNetwork.cs" />
   </ItemGroup>
 
   <ItemGroup>

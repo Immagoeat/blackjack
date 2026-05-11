@@ -95,30 +95,60 @@ namespace BlackjackSimulator
         }
     }
 
-    public enum Phase { SlotSelect, Menu, Betting, PlayerTurn, Results, BuyChips, Stats }
+    public class Player
+    {
+        public string     Name        { get; set; }
+        public int        Chips       { get; set; }
+        public int        HandsPlayed { get; set; }
+        public int        HandsWon    { get; set; }
+        public int        NetWinnings { get; set; }
+        public int        BetAmount   { get; set; } = 100;
+        public List<Hand> Hands       { get; set; } = new();
+        public List<string> Results   { get; set; } = new();
+
+        public Player(string name, int chips = 1000)
+        {
+            Name  = name;
+            Chips = chips;
+        }
+    }
+
+    public enum GameMode { Blackjack, Poker, Slots }
+    public enum Phase { SlotSelect, ModeSelect, PlayerSetup, Menu, Betting, PlayerTurn, Results, BuyChips, Stats,
+                        PokerSetup, PokerPlay, PokerShowdown,
+                        SlotsPlay }
 
     public class GS
     {
-        public Deck           Deck        = new(6);
-        public int            Chips       = 1000;
-        public Hand           Dealer      = new();
-        public List<Hand>     Hands       = new();
-        public int            ActiveHand  = 0;
-        public Phase          Phase       = Phase.SlotSelect;
-        public int            HandsPlayed = 0;
-        public int            HandsWon    = 0;
-        public int            NetWinnings = 0;
-        public bool           DealerShown = false;
-        public List<string>   Results     = new();
+        public Deck         Deck        = new(6);
+        public Hand         Dealer      = new();
+        public bool         DealerShown = false;
+
+        // Multi-player
+        public List<Player> Players     = new() { new Player("Player 1") };
+        public int          ActivePlayer = 0;   // whose turn in betting / play
+        public int          ActiveHand   = 0;   // which hand of ActivePlayer
+
+        // legacy single-player accessors used by rendering helpers
+        public int          Chips       { get => Players[0].Chips;       set => Players[0].Chips       = value; }
+        public List<Hand>   Hands       { get => Players[ActivePlayer].Hands; set => Players[ActivePlayer].Hands = value; }
+        public List<string> Results     { get => Players[ActivePlayer].Results; }
+        public int          HandsPlayed { get => Players[0].HandsPlayed; set => Players[0].HandsPlayed = value; }
+        public int          HandsWon    { get => Players[0].HandsWon;    set => Players[0].HandsWon    = value; }
+        public int          NetWinnings { get => Players[0].NetWinnings; set => Players[0].NetWinnings = value; }
+        public int          BetAmount   { get => Players[ActivePlayer].BetAmount; set => Players[ActivePlayer].BetAmount = value; }
+
+        public Phase        Phase       = Phase.SlotSelect;
+        public GameMode     Mode        = GameMode.Blackjack;
 
         // UI state
-        public int  BetAmount = 100;
-        public int  MenuSel   = -1;   // -1 = no keyboard highlight yet
-        public int  BuySel    = 0;
-        public bool AutoPlay  = false;
+        public int  MenuSel        = -1;
+        public int  BuySel         = 0;
+        public bool AutoPlay       = false;
+        public int  PlayerSetupSel = 1;   // number of players chosen (1-4)
 
         // Active save slot (0-2)
         public int  SlotIndex = 0;
-        public int  SlotSel   = 0;   // selection on slot-select screen
+        public int  SlotSel   = 0;
     }
 }
