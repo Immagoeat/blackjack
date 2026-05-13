@@ -140,12 +140,16 @@ namespace BlackjackSimulator
         public int NextActive(int from)
         {
             int idx = (from + 1) % Players.Count;
-            int tries = 0;
-            while ((Players[idx].IsFolded || Players[idx].IsOut || Players[idx].IsAllIn) && tries < Players.Count)
-            { idx = (idx + 1) % Players.Count; tries++; }
-            return idx;
+            for (int tries = 0; tries < Players.Count; tries++)
+            {
+                if (!Players[idx].IsFolded && !Players[idx].IsOut && !Players[idx].IsAllIn)
+                    return idx;
+                idx = (idx + 1) % Players.Count;
+            }
+            return from; // all others are folded/out/all-in — stay put
         }
 
+        // Players still in the hand (not folded, not out — all-in counts as still in)
         public int ActiveCount => Players.Count(p => !p.IsFolded && !p.IsOut);
         public bool AllActed(int startIdx)
         {
@@ -216,31 +220,18 @@ namespace BlackjackSimulator
 
         private void AdvanceTurn()
         {
-            // Check if only one player remains
-            if (ActiveCount == 1)
-            { DoShowdown(); return; }
+            // If only one player hasn't folded/busted, they win immediately
+            int notFolded = Players.Count(p => !p.IsFolded && !p.IsOut);
+            if (notFolded == 1) { DoShowdown(); return; }
 
-            // Find next active player
+            // Street is done when every player who can still act has matched CurrentBet
+            bool streetDone = Players.All(p =>
+                p.IsFolded || p.IsOut || p.IsAllIn || p.Bet >= CurrentBet);
+
+            if (streetDone) { AdvanceStreet(); return; }
+
+            // Advance to next player who can act
             int next = NextActive(ActiveIdx);
-            bool streetDone = false;
-
-            // Street is done when we've gone around and everyone has matched CurrentBet
-            // Check if next player has already acted and is up to CurrentBet
-            int count = 0;
-            int check = next;
-            streetDone = true;
-            do
-            {
-                var p = Players[check];
-                if (!p.IsFolded && !p.IsOut && !p.IsAllIn && p.Bet < CurrentBet)
-                { streetDone = false; break; }
-                check = NextActive(check);
-                count++;
-            } while (count < Players.Count);
-
-            if (streetDone)
-            { AdvanceStreet(); return; }
-
             ActiveIdx = next;
             if (!Players[ActiveIdx].IsHuman)
                 DoAiAction(ActiveIdx);
@@ -442,19 +433,18 @@ namespace BlackjackSimulator
         public static int EvaluateBest(List<Card> hole, List<Card> board)
         {
             var all = hole.Concat(board).ToList();
+            if (all.Count <= 5) return Evaluate5(all);
+            // Try all C(n,5) combos by dropping 2 cards
             int best = 0;
-            // Try all C(n,5) combos
             for (int i = 0; i < all.Count - 1; i++)
             for (int j = i + 1; j < all.Count; j++)
             {
-                var five = all.Where((_, idx) => idx != i && idx != j).ToList();
-                if (five.Count == 5)
-                {
-                    int val = Evaluate5(five);
-                    if (val > best) best = val;
-                }
+                var five = new List<Card>(5);
+                for (int k = 0; k < all.Count; k++)
+                    if (k != i && k != j) five.Add(all[k]);
+                int val = Evaluate5(five);
+                if (val > best) best = val;
             }
-            if (all.Count <= 5) best = Evaluate5(all);
             return best;
         }
 
@@ -495,8 +485,7 @@ namespace BlackjackSimulator
             // Wheel (A-2-3-4-5): ace = 14, treat as 1
             if (sorted[0] == (int)Rank.Ace)
             {
-                var wheel = new List<int> { 5, 4, 3, 2, 1 };
-                var low   = sorted.Skip(1).ToList();
+                var low = sorted.Skip(1).ToList();
                 low.Add(1);
                 low.Sort((a, b) => b - a);
                 ok = true;

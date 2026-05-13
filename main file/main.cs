@@ -428,9 +428,11 @@ void main(){
         // ── keyboard ──────────────────────────────────────────
         private void OnChar(char c)
         {
-            if (_g.Phase != Phase.PlayerSetup || _editingPlayer < 0) return;
+            if (_editingPlayer < 0) return;
+            if (_g.Phase != Phase.PlayerSetup && _g.Phase != Phase.PokerSetup) return;
             if (c < 32 || c > 126) return;
-            if (_editBuf.Length < 12) _editBuf += c;
+            int maxLen = _editingPlayer == 99 ? 64 : 12; // IP allows longer input
+            if (_editBuf.Length < maxLen) _editBuf += c;
         }
 
         private void OnKey(Key k)
@@ -531,8 +533,14 @@ void main(){
                             _editBuf = _editBuf[..^1];
                         if (k is Key.Enter or Key.Escape)
                         {
-                            if (_editBuf.Trim().Length > 0 && _editingPlayer < _poker.Players.Count)
+                            if (_editingPlayer == 99)
+                            {
+                                _lanHostIP = _editBuf.Trim();
+                            }
+                            else if (_editBuf.Trim().Length > 0 && _editingPlayer < _poker.Players.Count)
+                            {
                                 _poker.Players[_editingPlayer].Name = _editBuf.Trim();
+                            }
                             _editingPlayer = -1; _editBuf = "";
                         }
                     }
@@ -549,11 +557,13 @@ void main(){
                     }
                     else if (_poker.IsHumanTurn)
                     {
-                        if (k == Key.F) _poker.DoAction(_poker.ActiveIdx, PokerAction.Fold);
-                        if (k == Key.C) _poker.DoAction(_poker.ActiveIdx,
+                        if (k == Key.F) DoPokerHumanAction(PokerAction.Fold);
+                        if (k == Key.C) DoPokerHumanAction(
                             _poker.CurrentBet == _poker.ActivePlayer!.Bet ? PokerAction.Check : PokerAction.Call);
-                        if (k == Key.R) _poker.DoAction(_poker.ActiveIdx, PokerAction.Raise, _poker.RaiseAmount);
-                        if (k == Key.A) _poker.DoAction(_poker.ActiveIdx, PokerAction.AllIn);
+                        if (k == Key.R) DoPokerHumanAction(PokerAction.Raise);
+                        if (k == Key.A) DoPokerHumanAction(PokerAction.AllIn);
+                        if (k == Key.Left)  _poker.RaiseAmount = Math.Max(_poker.BigBlind, _poker.RaiseAmount - _poker.BigBlind);
+                        if (k == Key.Right) _poker.RaiseAmount = Math.Min(_poker.ActivePlayer!.Chips, _poker.RaiseAmount + _poker.BigBlind);
                     }
                     if (k == Key.Escape) _g.Phase = Phase.ModeSelect;
                     break;

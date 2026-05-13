@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 
@@ -63,6 +64,12 @@ namespace BlackjackSimulator
         public int         Seat      { get; set; }
     }
 
+    internal static class NetLog
+    {
+        internal static void Print(string msg) =>
+            Console.WriteLine($"[NET {DateTime.Now:HH:mm:ss.fff}] {msg}");
+    }
+
     public class LanHost : IDisposable
     {
         public const int PORT = 27015;
@@ -84,6 +91,20 @@ namespace BlackjackSimulator
             _running  = true;
             _listener = new TcpListener(IPAddress.Any, PORT);
             _listener.Start();
+
+            // Print local IPs so the host can share them easily
+            var localIPs = NetworkInterface.GetAllNetworkInterfaces()
+                .SelectMany(n => n.GetIPProperties().UnicastAddresses)
+                .Where(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                         && !IPAddress.IsLoopback(a.Address))
+                .Select(a => a.Address.ToString())
+                .ToList();
+            NetLog.Print($"Table created — listening on port {PORT}  ({totalSeats} seats)");
+            foreach (var ip in localIPs)
+                NetLog.Print($"  Local IP: {ip}");
+            if (localIPs.Count == 0)
+                NetLog.Print("  (no non-loopback IPv4 addresses found)");
+
             var t = new Thread(AcceptLoop) { IsBackground = true };
             t.Start();
             _threads.Add(t);
@@ -96,69 +117,81 @@ namespace BlackjackSimulator
                 try
                 {
                     var client = _listener!.AcceptTcpClient();
+                    string remoteIP = (client.Client.RemoteEndPoint as IPEndPoint)?.Address.ToString() ?? "?";
                     int seat;
                     lock (_clients) { seat = _clients.Count + 1; _clients.Add(client); }
                     ClientNames.Add($"Player {seat + 1}");
+                    NetLog.Print($"Player connected from {remoteIP}  (seat {seat})  [{_clients.Count}/{SeatCount - 1} clients]");
                     ClientConnected?.Invoke(seat);
-                    var rt = new Thread(() => ReadLoop(client, seat)) { IsBackground = true };
+                    var rt = new Thread(() => ReadLoop(client, seat, remoteIP)) { IsBackground = true };
                     rt.Start();
                     _threads.Add(rt);
                 }
                 catch { break; }
             }
+            NetLog.Print("Accept loop stopped.");
         }
 
-        private void ReadLoop(TcpClient client, int seat)
+        private void ReadLoop(TcpClient client, int seat, string remoteIP)
         {
             try
             {
                 var stream = client.GetStream();
-                var buf    = new byte[65536];
                 while (_running)
                 {
-                    int n = stream.Read(buf, 0, buf.Length);
-                    if (n == 0) break;
-                    var pkt = JsonSerializer.Deserialize<NetPacket>(buf.AsSpan(0, n));
-                    if (pkt?.Type == NetMsg.Action)
+                    var pkt = ReadPacket(stream);
+                    if (pkt == null) break;
+                    if (pkt.Type == NetMsg.Action)
                     {
                         var act = JsonSerializer.Deserialize<NetActionPayload>(pkt.Payload) ?? new();
                         act.Seat = seat;
+                        NetLog.Print($"Action from seat {seat} ({remoteIP}): {act.Action}" +
+                            (act.Action == PokerAction.Raise ? $" +${act.RaiseAmt}" : ""));
                         ActionReceived?.Invoke(act);
                     }
-                    else if (pkt?.Type == NetMsg.PlayerInfo)
+                    else if (pkt.Type == NetMsg.PlayerInfo)
                     {
-                        if (seat < ClientNames.Count + 1)
-                            ClientNames[seat - 1] = pkt.Payload;
+                        int nameIdx = seat - 1;
+                        if (nameIdx >= 0 && nameIdx < ClientNames.Count)
+                        {
+                            string oldName = ClientNames[nameIdx];
+                            ClientNames[nameIdx] = pkt.Payload;
+                            NetLog.Print($"Seat {seat} ({remoteIP}) set name: \"{pkt.Payload}\"" +
+                                (oldName != pkt.Payload ? $"  (was \"{oldName}\")" : ""));
+                        }
                     }
                 }
             }
-            catch { }
-            finally { ClientDisconnected?.Invoke(seat); }
+            catch (Exception ex) { NetLog.Print($"Read error on seat {seat} ({remoteIP}): {ex.Message}"); }
+            finally
+            {
+                NetLog.Print($"Seat {seat} ({remoteIP}) disconnected.");
+                ClientDisconnected?.Invoke(seat);
+            }
         }
 
         public void BroadcastState(PokerGame game, double now)
         {
             var snap = BuildSnapshot(game, now);
-            // Send full state to all clients (hole cards masked)
-            for (int i = 0; i < _clients.Count; i++)
+            lock (_clients)
             {
-                int clientSeat = i + 1;
-                var s = MaskSnapshot(snap, clientSeat);
-                Send(_clients[i], new NetPacket {
-                    Type    = NetMsg.State,
-                    Seat    = 0,
-                    Payload = JsonSerializer.Serialize(s)
-                });
+                for (int i = 0; i < _clients.Count; i++)
+                {
+                    int clientSeat = i + 1;
+                    var s = MaskSnapshot(snap, clientSeat);
+                    Send(_clients[i], new NetPacket {
+                        Type    = NetMsg.State,
+                        Seat    = 0,
+                        Payload = JsonSerializer.Serialize(s)
+                    });
+                }
             }
+            NetLog.Print($"State broadcast → {_clients.Count} client(s)  phase={game.Phase}  pot=${game.Pot}  active={game.ActiveIdx}");
         }
 
-        private void Send(TcpClient client, NetPacket pkt)
+        private static void Send(TcpClient client, NetPacket pkt)
         {
-            try
-            {
-                var bytes = JsonSerializer.SerializeToUtf8Bytes(pkt);
-                client.GetStream().Write(bytes, 0, bytes.Length);
-            }
+            try { WritePacket(client.GetStream(), pkt); }
             catch { }
         }
 
@@ -216,11 +249,44 @@ namespace BlackjackSimulator
             return list;
         }
 
+        // Length-prefix framing shared by host and client
+        internal static void WritePacket(NetworkStream stream, NetPacket pkt)
+        {
+            var body = JsonSerializer.SerializeToUtf8Bytes(pkt);
+            var len  = BitConverter.GetBytes(body.Length);
+            stream.Write(len,  0, 4);
+            stream.Write(body, 0, body.Length);
+        }
+
+        internal static NetPacket? ReadPacket(NetworkStream stream)
+        {
+            var lenBuf = new byte[4];
+            if (!ReadExact(stream, lenBuf, 4)) return null;
+            int size = BitConverter.ToInt32(lenBuf, 0);
+            if (size <= 0 || size > 1 << 20) return null; // sanity cap 1 MB
+            var body = new byte[size];
+            if (!ReadExact(stream, body, size)) return null;
+            return JsonSerializer.Deserialize<NetPacket>(body);
+        }
+
+        private static bool ReadExact(NetworkStream stream, byte[] buf, int count)
+        {
+            int read = 0;
+            while (read < count)
+            {
+                int n = stream.Read(buf, read, count - read);
+                if (n == 0) return false;
+                read += n;
+            }
+            return true;
+        }
+
         public void Dispose()
         {
             _running = false;
             _listener?.Stop();
-            foreach (var c in _clients) c.Close();
+            lock (_clients) { foreach (var c in _clients) c.Close(); }
+            NetLog.Print("Host shut down.");
         }
     }
 
@@ -237,46 +303,62 @@ namespace BlackjackSimulator
 
         public bool Connect(string host, string playerName)
         {
+            NetLog.Print($"Connecting to {host}:{LanHost.PORT} as \"{playerName}\"...");
             try
             {
                 _client  = new TcpClient();
                 _client.Connect(host, LanHost.PORT);
                 _running = true;
+                NetLog.Print($"Connected to {host}:{LanHost.PORT}  (local {_client.Client.LocalEndPoint})");
 
-                // Send our name
                 Send(new NetPacket { Type = NetMsg.PlayerInfo, Payload = playerName, Seat = 0 });
+                NetLog.Print($"Sent player name: \"{playerName}\"");
 
                 var t = new Thread(ReadLoop) { IsBackground = true };
                 t.Start();
                 return true;
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                NetLog.Print($"Connection failed: {ex.Message}");
+                return false;
+            }
         }
 
         private void ReadLoop()
         {
-            var buf = new byte[65536];
+            int stateCount = 0;
             try
             {
                 var stream = _client!.GetStream();
+                NetLog.Print("Read loop started — waiting for state packets.");
                 while (_running)
                 {
-                    int n = stream.Read(buf, 0, buf.Length);
-                    if (n == 0) break;
-                    var pkt = JsonSerializer.Deserialize<NetPacket>(buf.AsSpan(0, n));
-                    if (pkt?.Type == NetMsg.State)
+                    var pkt = LanHost.ReadPacket(stream);
+                    if (pkt == null) break;
+                    if (pkt.Type == NetMsg.State)
                     {
                         var snap = JsonSerializer.Deserialize<PokerStateSnapshot>(pkt.Payload);
-                        if (snap != null) StateReceived?.Invoke(snap);
+                        if (snap != null)
+                        {
+                            stateCount++;
+                            NetLog.Print($"State received #{stateCount}  phase={snap.Phase}  pot=${snap.Pot}  active={snap.ActiveIdx}");
+                            StateReceived?.Invoke(snap);
+                        }
                     }
                 }
             }
-            catch { }
-            finally { Disconnected?.Invoke(); }
+            catch (Exception ex) { NetLog.Print($"Read error: {ex.Message}"); }
+            finally
+            {
+                NetLog.Print($"Disconnected from host after {stateCount} state packet(s).");
+                Disconnected?.Invoke();
+            }
         }
 
         public void SendAction(PokerAction action, int raiseAmt = 0)
         {
+            NetLog.Print($"Sending action: {action}" + (action == PokerAction.Raise ? $" +${raiseAmt}" : ""));
             Send(new NetPacket {
                 Type    = NetMsg.Action,
                 Seat    = MySeat,
@@ -290,8 +372,8 @@ namespace BlackjackSimulator
         {
             try
             {
-                var bytes = JsonSerializer.SerializeToUtf8Bytes(pkt);
-                _client?.GetStream().Write(bytes, 0, bytes.Length);
+                if (_client?.Connected == true)
+                    LanHost.WritePacket(_client.GetStream(), pkt);
             }
             catch { }
         }
@@ -300,6 +382,7 @@ namespace BlackjackSimulator
         {
             _running = false;
             _client?.Close();
+            NetLog.Print("Client shut down.");
         }
     }
 }
